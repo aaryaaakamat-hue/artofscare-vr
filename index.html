@@ -3672,6 +3672,37 @@ addEventListener('keydown',e=>{if(e.code!=='KeyL'||e.repeat||e.ctrlKey||e.metaKe
  if(!score||!score.energy)score={energy:120,power:1,rate:'GREAT SCARE',R:60,parts:[['ROAR','×1.1'],['TIMING','×1'],['TOOL','×1'],['STEALTH','×1.1']],line:'Shortcut — test score'};if(!score.rate)score.rate='GREAT SCARE';
  fade=1;hallEnter();stage='end';bestE=Math.max(bestE,score.energy);lbAdd(playerName||'ROOKIE',TH[themeI].kid.split(',')[0],score.energy,MK);say('⏩ LEADERBOARD HALL','Shortcut');tone(500,1000,.2,.12,'triangle')},true);
 
+/* ======================= v34: final polish
+   · Glimmy says ONE short line in the whole game — his hello. His earpiece radio is switched off.
+   · children talk less, and every line sounds frightened (max 3 short lines per room + the scream)
+   · before the roar: a reminder that 1 · 2 · 3 (VR: Y tool wheel) give you extra scare tools ======================= */
+const V34={said:{},kT:-1e9,tip:0,room:-1,tipTk:0};
+radio=function(){};
+glimTalk=function(){if(V27.intro!==1)return;V27.intro=2;V27.gS=performance.now();tone(660,990,.12,.1,'triangle');GMK.visible=false;
+ const l='Hi! I\'m Glimmy!';sub('GLIMMY',l,'#7dffa8');speak(l,1.75,1.18,.85,4)};
+// short, scared lines: a whimper when they stir, fear when they sense you, terror at the scare
+VL[0]=['…Mom?','Wh-who\'s there…?','I\'m scared… MOM!'];
+VL[1]=['…Captain Floppy?','S-somebody\'s in here…','I\'m scared… MOM!'];
+VL[2]=['Wh-what was that…?','P-please… go away…','I\'m scared! DAD!'];
+voiceSay=(f=>function(n,quiet){if(quiet)return;if(V34.said[n])return;if(n!==2&&performance.now()-V34.kT<7000)return;V34.said[n]=1;V34.kT=performance.now();return f(n,quiet)})(voiceSay);
+enterRoom=(f=>function(ti){if(ti!==V34.room){V34.room=ti;V34.said={};V34.kT=-1e9}V34.tip=0;return f.apply(this,arguments)})(enterRoom);
+// the tool reminder — once per visit, when the scare is ready (FEAR 75%) or you step into the scare zone
+const TIPP=vpMake(1.05,.27,1050,270);
+function toolTip(){V34.tip=1;const xr=renderer.xr.isPresenting,tk=V34.tipTk=performance.now();tone(660,990,.12,.1,'triangle');
+ say('BEFORE YOU ROAR',xr?'Press Y for the tool wheel · mask · honk · ghost sheet':'Press 1 · 2 · 3 for extra scare tools · mask · honk · ghost sheet');
+ if(!xr){bigMsg('PRESS 1 · 2 · 3','#ffd23a','Extra scare tools before you ROAR — mask · honk · ghost sheet');setTimeout(()=>{if(V34.tipTk===tk&&/^PRESS 1/.test($('rateT').textContent))bigMsg('')},4200);return}
+ const g=TIPP.g;g.clearRect(0,0,1050,270);g.fillStyle='rgba(6,12,22,.94)';g.beginPath();g.roundRect(4,4,1042,262,26);g.fill();g.strokeStyle='#ffd23a';g.lineWidth=6;g.stroke();
+ g.textAlign='center';g.fillStyle='#ffd23a';g.font="bold 64px 'Titan One',Arial Black";g.fillText('PRESS Y · TOOL WHEEL',525,110);
+ g.fillStyle='#fff';g.font='34px system-ui,Arial';g.fillText('Extra scare tools before you ROAR',525,168);g.fillStyle='#9fb0c4';g.font='30px system-ui,Arial';g.fillText('mask · honk · ghost sheet',525,218);
+ TIPP.t.needsUpdate=true;placePanel(TIPP.m,1.3,.15);TIPP.m.visible=true;setTimeout(()=>{if(V34.tipTk===tk)TIPP.m.visible=false},5000)}
+const _v34=v24Tick;v24Tick=function(dt,t){_v34(dt,t);
+ if(area==='bedroom'&&stage==='bed'&&!V34.tip&&!V23.act&&(FEAR>=.75||V24.inZone))toolTip();
+ if(TIPP.m.visible&&(area!=='bedroom'||stage!=='bed'))TIPP.m.visible=false};
+// guidebook: it used to measure its window while still hidden (→ tiny 200 px book on the first open). Measure once it is visible.
+hbFit=function(w){const r=$('hbp').getBoundingClientRect();if(r.width<10||r.height<10){requestAnimationFrame(()=>{const r2=$('hbp').getBoundingClientRect();if(r2.width>=10&&r2.height>=10)hbFit(w)});return}
+ const W=Math.max(200,Math.min(r.width,r.height*1.6));w.style.width=W+'px';w.style.height=W/1.6+'px'};
+openHB=(f=>function(first){const res=f(first);const w=$('hbp')&&$('hbp').querySelector('.fw');if(w){hbFit(w);requestAnimationFrame(()=>hbFit(w))}return res})(openHB);
+
 $('hbA').onclick=()=>hallPlayAgain();$('hbD').onclick=()=>hallDoors();
 /* ---------- 11. START ---------- */
 setArea('factory');placeRig(0,14,0);say('','');lbRender();
